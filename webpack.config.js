@@ -1,39 +1,22 @@
 var path = require('path');
 var HtmlwebpackPlugin = require('html-webpack-plugin');
-//定义了一些文件夹的路径
 var ROOT_PATH = path.resolve(__dirname);
 var APP_PATH = path.resolve(ROOT_PATH, 'app');
 var BUILD_PATH = path.resolve(ROOT_PATH, 'docs');
-var starterConfig = require('./starter.config')
+var starterConfig = require('./config/starter.config')
 
-var getCDN = (type) => {
-    switch (type) {
-        case 'vue':
-            return `
-            <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script><script type="text/javascript" src="https://unpkg.com/vue-router/dist/vue-router.js"></script>`.trim()
-        case 'react':
-            return `
-            <script type="text/javascript" crossorigin src="https://unpkg.com/react@16/umd/react.${process.env.NODE_ENV=='production'?'production.min':'development'}.js"></script><script type="text/javascript" crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.${process.env.NODE_ENV=='production'?'production.min':'development'}.js"></script>`.trim()
-        default:
-            return ''
+let renderCDN = (cdnObj) => {
+    let cdnStr = ''
+    let env = process.env.NODE_ENV
+    cdnObj.base.forEach((cdn)=>{
+            cdnStr += `<script type="text/javascript" crossorigin src="${cdn}"></script>`
+    })
+    if(cdnObj[env]){
+        cdnObj[env].forEach((cdn)=>{
+            cdnStr += `<script type="text/javascript" crossorigin src="${cdn}"></script>`
+    })
     }
-}
-
-var getExternals = (type) => {
-    switch (type) {
-        case 'vue':
-            return {
-                vue: 'Vue',
-                'vue-router': 'VueRouter'
-            }
-        case 'react':
-        return {
-            react: 'React',
-            'react-dom': 'ReactDOM',
-        }
-        default:
-            return {}
-    }
+    return cdnStr
 }
 
 module.exports = {
@@ -51,7 +34,7 @@ module.exports = {
         progress: true,
     },
     externals: {
-        ...getExternals(starterConfig.type)
+        ...starterConfig.externals
     },
     resolve: {
         extensions: ['.js', '.json', '.vue', '.jsx'],
@@ -64,7 +47,7 @@ module.exports = {
         rules: [
           {
             test: /\.jsx?$/,
-            loaders: ['babel-loader?presets[]=es2015,presets[]=react']
+            loaders: ['babel-loader?presets[]=stage-0,presets[]=react']
           },
           {
             test: /\.vue$/,
@@ -81,7 +64,7 @@ module.exports = {
         new HtmlwebpackPlugin({
             title: 'Hello React Starter',
             template: 'public/index.html',
-            cdn: getCDN(starterConfig.type)
+            cdn: renderCDN(starterConfig.cdn)
         })
     ]
 };
